@@ -87,7 +87,7 @@ function validateCommandLineArguments(commandLineArgs: ICommandLineArguments[]):
     }
   }
 
-  if (!(hasOutputDirectory && hasManifest)) {
+  if (isHeadless && !(hasOutputDirectory && hasManifest)) {
     console.error(`manifest file and/or output directory are missing!`);
     return false;
   }
