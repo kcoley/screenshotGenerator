@@ -14,16 +14,13 @@
   ],
   "author": "Kacey Coley",
   "license": "ISC",
-  "dependencies": {
-    "babylonjs": "^3.2.0-beta.1",
-    "babylonjs-loaders": "^3.2.0-beta.1"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "babylonjs": "^3.2.0-beta.1",
-    "babylonjs-loaders": "^3.2.0-beta.1",
-    "electron": "^1.7.10",
+    "babylonjs": "^3.3.0-alpha.6",
+    "babylonjs-loaders": "^3.3.0-alpha.6",
+    "electron": "^2.0.2",
     "install": "^0.10.4",
-    "npm": "^5.7.1",
-    "typescript": "^2.6.2"
+    "npm": "^6.1.0",
+    "typescript": "^2.9.2"
   }
 }
