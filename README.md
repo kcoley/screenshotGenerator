@@ -4,9 +4,9 @@ How to build:
 Run these commands:
 
 ```
-npm install --save babylonjs@3.2.0-beta.1 babylonjs-loaders@3.2.0-beta.1
-npm install --save-dev typescript@2.6.2
-npm install --save-dev electron@1.7.10
+npm install --save babylonjs@3.3.0-alpha.6 babylonjs-loaders@3.3.0-alpha.6
+npm install --save-dev typescript@2.9.2
+npm install --save-dev electron@2.0.2
 ```
 
 To build the generator:
