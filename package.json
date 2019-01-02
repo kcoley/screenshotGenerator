@@ -16,11 +16,11 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
-    "babylonjs": "^3.3.0-alpha.9",
-    "babylonjs-loaders": "^3.3.0-alpha.9",
+    "babylonjs": "^3.3.0-alpha.10",
+    "babylonjs-loaders": "^3.3.0-alpha.10",
     "electron": "^2.0.2",
     "install": "^0.10.4",
-    "npm": "^6.1.0",
+    "npm": "^6.5.0",
     "typescript": "^2.9.2"
   }
 }
