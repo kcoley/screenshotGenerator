@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const BABYLON = require("babylonjs");
 require("babylonjs-loaders");
+const babylonjs_1 = require("babylonjs");
 const { remote } = require('electron');
 const { dialog } = remote;
 const w = remote.getCurrentWindow();
@@ -70,34 +71,48 @@ class Renderer {
             }
         });
     }
-    createSnapshotAsync(canvas, engine, filename, outputFolder, ms = 5000) {
+    createSnapshotAsync(canvas, engine, filename, outputFolder, ms = 30000) {
         const self = this;
         return new Promise((resolve, reject) => {
             const name = BABYLON.Tools.GetFilename(filename).replace('.glb', '.png').replace('.gltf', '.png') || "test.png";
             con.log("making snapshot for: " + name);
+            const recorder = new babylonjs_1.VideoRecorder(engine);
             self._scene.executeWhenReady(() => {
-                self._scene.render();
-                self.createScreenshot({ width: self._canvas.width, height: self._canvas.height }, function (base64Image) {
-                    if (base64Image) {
-                        base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
-                        const filename = outputFolder + '/' + name;
-                        fs.writeFile(filename, base64Image, 'base64', function (err) {
-                            if (err) {
-                                reject("error happened: " + err);
-                            }
-                            else {
-                                resolve("snapshot generated");
-                            }
-                        });
-                    }
-                    else {
-                        reject("No image data available");
-                    }
+                self._scene.getEngine().runRenderLoop(() => {
+                    self._scene.render();
+                });
+                const gifFilename = outputFolder + '/' + name.replace('.png', '.webm');
+                recorder.startRecording(null, 3).then((videoblob) => {
+                    var arrayBuffer;
+                    const fileReader = new FileReader();
+                    fileReader.onload = function (event) {
+                        fs.writeFileSync(gifFilename, Buffer.from(new Uint8Array(this.result)));
+                        con.log(JSON.stringify(videoblob));
+                        resolve("Video generated");
+                    };
+                    fileReader.readAsArrayBuffer(videoblob);
+                    // self.createScreenshot({ width: self._canvas.width, height: self._canvas.height }, function (base64Image: string) {
+                    //     if (base64Image) {
+                    //         base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
+                    //         const filename = outputFolder + '/' + name;
+                    //         fs.writeFile(filename, base64Image, 'base64', function (err: string) {
+                    //             if (err) {
+                    //                 reject("error happened: " + err);
+                    //             }
+                    //             else {
+                    //                 resolve("snapshot generated");
+                    //             }
+                    //         });
+                    //     }
+                    //     else {
+                    //         reject("No image data available");
+                    //     }
+                    // });
                 });
             });
-            setTimeout(() => {
-                reject(`createSnapshotAsync: Promise timed out after ${ms} ms.`);
-            }, ms);
+            //setTimeout(() => {
+            //    reject(`createSnapshotAsync: Promise timed out after ${ms} ms.`);
+            //}, ms);
         });
     }
     createSnapshotsAsync(glTFAssets, canvas, engine, outputDirectory) {

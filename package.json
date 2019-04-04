@@ -14,7 +14,9 @@
   ],
   "author": "Kacey Coley",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "tslib": "^1.9.3"
+  },
   "devDependencies": {
     "babylonjs": "^4.0.0-alpha.32",
     "babylonjs-loaders": "^4.0.0-alpha.32",
