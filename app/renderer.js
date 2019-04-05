@@ -71,44 +71,49 @@ class Renderer {
             }
         });
     }
-    createSnapshotAsync(canvas, engine, filename, outputFolder, ms = 30000) {
+    createSnapshotAsync(canvas, engine, sampleImageName, outputFolder, ms = 30000) {
         const self = this;
         return new Promise((resolve, reject) => {
-            const name = BABYLON.Tools.GetFilename(filename).replace('.glb', '.png').replace('.gltf', '.png') || "test.png";
+            const name = BABYLON.Tools.GetFilename(sampleImageName).replace('Figures/SampleImages/', '');
             con.log("making snapshot for: " + name);
             const recorder = new babylonjs_1.VideoRecorder(engine);
             self._scene.executeWhenReady(() => {
-                self._scene.getEngine().runRenderLoop(() => {
+                if (!sampleImageName.endsWith('.png')) {
                     self._scene.render();
-                });
-                const gifFilename = outputFolder + '/' + name.replace('.png', '.webm');
-                recorder.startRecording(null, 3).then((videoblob) => {
-                    var arrayBuffer;
-                    const fileReader = new FileReader();
-                    fileReader.onload = function (event) {
-                        fs.writeFileSync(gifFilename, Buffer.from(new Uint8Array(this.result)));
-                        con.log(JSON.stringify(videoblob));
-                        resolve("Video generated");
-                    };
-                    fileReader.readAsArrayBuffer(videoblob);
-                    // self.createScreenshot({ width: self._canvas.width, height: self._canvas.height }, function (base64Image: string) {
-                    //     if (base64Image) {
-                    //         base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
-                    //         const filename = outputFolder + '/' + name;
-                    //         fs.writeFile(filename, base64Image, 'base64', function (err: string) {
-                    //             if (err) {
-                    //                 reject("error happened: " + err);
-                    //             }
-                    //             else {
-                    //                 resolve("snapshot generated");
-                    //             }
-                    //         });
-                    //     }
-                    //     else {
-                    //         reject("No image data available");
-                    //     }
-                    // });
-                });
+                    self.createScreenshot({ width: self._canvas.width, height: self._canvas.height }, function (base64Image) {
+                        if (base64Image) {
+                            base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
+                            const sampleImageName = outputFolder + '/' + name;
+                            fs.writeFile(sampleImageName, base64Image, 'base64', function (err) {
+                                if (err) {
+                                    reject("error happened: " + err);
+                                }
+                                else {
+                                    resolve("snapshot generated");
+                                }
+                            });
+                        }
+                        else {
+                            reject("No image data available");
+                        }
+                    });
+                }
+                else if (sampleImageName.endsWith('.png')) {
+                    self._scene.getEngine().runRenderLoop(() => {
+                        self._scene.render();
+                    });
+                    // Capture and download a webm of the animated model.
+                    const webmFilename = outputFolder + '/' + name.replace('.gif', '.webm');
+                    recorder.startRecording(null, 3).then((videoblob) => {
+                        const fileReader = new FileReader();
+                        fileReader.onload = function () {
+                            fs.writeFileSync(webmFilename, Buffer.from(new Uint8Array(this.result)));
+                            resolve("Video generated");
+                        };
+                        fileReader.readAsArrayBuffer(videoblob);
+                    });
+                    // Convert the webm to animated gif.
+                }
             });
             //setTimeout(() => {
             //    reject(`createSnapshotAsync: Promise timed out after ${ms} ms.`);
@@ -121,7 +126,7 @@ class Renderer {
             for (let i = 0; i < glTFAssets.length; ++i) {
                 try {
                     const r = yield this.createSceneAsync(canvas, engine, glTFAssets[i].filepath, glTFAssets[i].camera.translation);
-                    const result = yield this.createSnapshotAsync(canvas, engine, glTFAssets[i].filepath, outputDirectory);
+                    const result = yield this.createSnapshotAsync(canvas, engine, glTFAssets[i].sampleImageName, outputDirectory);
                 }
                 catch (err) {
                     con.log("Failed to create snapshot: " + err);
