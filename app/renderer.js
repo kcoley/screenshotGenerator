@@ -20,6 +20,9 @@ const stream = require('stream');
 const con = remote.getGlobal('console');
 const { app } = remote;
 const { ipcRenderer } = require('electron');
+const path = require('path');
+const exec = require('child_process');
+const ffmpegPath = require('ffmpeg-binaries');
 ;
 class Renderer {
     createSceneAsync(canvas, engine, filepath, camPos) {
@@ -78,7 +81,7 @@ class Renderer {
             con.log("making snapshot for: " + name);
             const recorder = new babylonjs_1.VideoRecorder(engine);
             self._scene.executeWhenReady(() => {
-                if (!sampleImageName.endsWith('.png')) {
+                if (sampleImageName.endsWith('.png')) {
                     self._scene.render();
                     self.createScreenshot({ width: self._canvas.width, height: self._canvas.height }, function (base64Image) {
                         if (base64Image) {
@@ -98,12 +101,13 @@ class Renderer {
                         }
                     });
                 }
-                else if (sampleImageName.endsWith('.png')) {
+                else if (sampleImageName.endsWith('.gif')) {
                     self._scene.getEngine().runRenderLoop(() => {
                         self._scene.render();
                     });
                     // Capture and download a webm of the animated model.
-                    const webmFilename = outputFolder + '/' + name.replace('.gif', '.webm');
+                    const gifFullName = outputFolder + '/' + name;
+                    const webmFilename = gifFullName.replace('.gif', '.webm');
                     recorder.startRecording(null, 3).then((videoblob) => {
                         const fileReader = new FileReader();
                         fileReader.onload = function () {
@@ -113,6 +117,8 @@ class Renderer {
                         fileReader.readAsArrayBuffer(videoblob);
                     });
                     // Convert the webm to animated gif.
+                    runProgram(`${ffmpegPath} -i ${webmFilename} ${gifFullName} -hide_banner`, __dirname)
+                        .catch((error) => { throw new Error(error); });
                 }
             });
             //setTimeout(() => {
@@ -262,6 +268,27 @@ class Renderer {
     }
 }
 exports.default = Renderer;
+/**
+ * Launches an specified external program.
+ * @param cmd Program to run, including command line parameters.
+ * @param directory Filepath to execute the program from.
+ * @param exitFunc Code to be run on completion. (Exit message, next function, etc...)
+ */
+function runProgram(cmd, directory) {
+    return new Promise((resolve, reject) => {
+        const child = exec(cmd, { cwd: directory });
+        child.stdout.on('data', (data) => {
+            console.log(data.toString());
+        });
+        child.stderr.on('data', (data) => {
+            console.log(data.toString());
+            reject(data);
+        });
+        child.on('close', () => {
+            resolve();
+        });
+    });
+}
 const renderer = new Renderer();
 let canvas = document.getElementById('render-canvas');
 renderer.initialize(canvas);

@@ -15,6 +15,10 @@ const { app } = remote;
 
 const { ipcRenderer } = require('electron');
 
+const path = require('path');
+const exec = require('child_process');
+const ffmpegPath = require('ffmpeg-binaries');
+
 interface ICamera {
     translation: BABYLON.Vector3
 };
@@ -125,7 +129,8 @@ export default class Renderer {
                     });
 
                     // Capture and download a webm of the animated model.
-                    const webmFilename = outputFolder + '/' + name.replace('.gif', '.webm');
+                    const gifFullName = outputFolder + '/' + name;
+                    const webmFilename = gifFullName.replace('.gif', '.webm');
                     recorder.startRecording(null, 3).then((videoblob) => {
                         const fileReader = new FileReader();
                         fileReader.onload = function () {
@@ -136,6 +141,8 @@ export default class Renderer {
                     });
 
                     // Convert the webm to animated gif.
+                    runProgram(`${ffmpegPath} -i ${webmFilename} ${gifFullName} -hide_banner`, __dirname)
+                    .catch((error) => { throw new Error(error)});
                 }
             });
 
@@ -304,6 +311,28 @@ export default class Renderer {
         BABYLON.Tools.Log('Exporting texture...');
         BABYLON.Tools.CreateScreenshot(this._engine, this._camera, size, callback);
     }
+}
+
+/**
+ * Launches an specified external program.
+ * @param cmd Program to run, including command line parameters.
+ * @param directory Filepath to execute the program from.
+ * @param exitFunc Code to be run on completion. (Exit message, next function, etc...)
+ */
+function runProgram(cmd: string, directory: string) {
+    return new Promise((resolve, reject) => {
+        const child = exec(cmd, {cwd: directory});
+        child.stdout.on('data', (data: string) => {
+            console.log(data.toString());
+        });
+        child.stderr.on('data', (data: string) => {
+            console.log(data.toString());
+            reject(data);
+        });
+        child.on('close', () => {
+            resolve();
+        });
+    });
 }
 
 const renderer = new Renderer();

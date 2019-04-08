@@ -148,7 +148,7 @@ function createWindow() {
       height: height,
       width: width,
       useContentSize: true,
-      show: headless
+      show: !headless
     });
 
     mainWindow.setContentSize(width, height);
