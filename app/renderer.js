@@ -21,7 +21,7 @@ const con = remote.getGlobal('console');
 const { app } = remote;
 const { ipcRenderer } = require('electron');
 const path = require('path');
-const exec = require('child_process');
+const child_process = require("child_process");
 const ffmpegPath = require('ffmpeg-binaries');
 ;
 class Renderer {
@@ -112,13 +112,13 @@ class Renderer {
                         const fileReader = new FileReader();
                         fileReader.onload = function () {
                             fs.writeFileSync(webmFilename, Buffer.from(new Uint8Array(this.result)));
-                            resolve("Video generated");
+                            // Convert the webm to full-sized animated gif, then a thumbnail.
+                            runProgram(`${ffmpegPath} -i ${webmFilename} ${gifFullName} -hide_banner`, __dirname);
+                            runProgram(`${ffmpegPath} -i ${webmFilename} -vf scale=72:72 ${gifFullName.replace('SampleImages', 'Thumbnails')} -hide_banner`, __dirname);
+                            resolve("Animated gif generated");
                         };
                         fileReader.readAsArrayBuffer(videoblob);
                     });
-                    // Convert the webm to animated gif.
-                    runProgram(`${ffmpegPath} -i ${webmFilename} ${gifFullName} -hide_banner`, __dirname)
-                        .catch((error) => { throw new Error(error); });
                 }
             });
             //setTimeout(() => {
@@ -276,7 +276,7 @@ exports.default = Renderer;
  */
 function runProgram(cmd, directory) {
     return new Promise((resolve, reject) => {
-        const child = exec(cmd, { cwd: directory });
+        const child = child_process.exec(cmd, { cwd: directory });
         child.stdout.on('data', (data) => {
             console.log(data.toString());
         });
@@ -285,7 +285,7 @@ function runProgram(cmd, directory) {
             reject(data);
         });
         child.on('close', () => {
-            resolve();
+            resolve('Program Closed');
         });
     });
 }

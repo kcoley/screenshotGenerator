@@ -36,6 +36,7 @@
             "program": "${workspaceFolder}/app/main.js",
             "args": ["--", "headless=true", "manifest=d:/_Code/Main/glTF-Asset-Generator/Output/Positive/Manifest.json", "outputDirectory=d:/_Code/Main/glTF-Asset-Generator/tempImages/Figures/SampleImages"],
             "cwd": "${workspaceFolder}",
+            "outputCapture": "std",
         },
         {
             "name": "Attach",
