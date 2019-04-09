@@ -5,61 +5,43 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch",
+            "name": "Launch Main",
             "type": "node",
             "request": "launch",
+            "program": "${workspaceFolder}/app/main.js",
             "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
             "windows": { "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd" },
-            "runtimeArgs" : [],
-            "program": "${workspaceFolder}/app/main.js",
-            "args": ["--", "headless=true", "manifest=d:/_Code/Main/glTF-Asset-Generator/Output/Positive/Manifest.json", "outputDirectory=d:/_Code/Main/glTF-Asset-Generator/tempImages/Figures/SampleImages"],
+            "stopOnEntry": false,
+            "runtimeArgs": [
+                "--remote-debugging-port=5858"
+            ],
+            "args": [
+                "--",
+                "--",
+                "headless=true", 
+                "manifest=${workspaceFolder}/../Output/Positive/Manifest.json", 
+                "outputDirectory=${workspaceFolder}/../tempImages/Figures/SampleImages"
+            ],
             "cwd": "${workspaceFolder}",
             "outputCapture": "std",
         },
         {
-            "name": "Debug Renderer",
+            "name": "Attach to Renderer",
             "type": "chrome",
-            "request": "launch",
-            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
-            "windows": { "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd" },
-            "runtimeArgs" : ["${workspaceFolder}/app/main.js", "--", "headless=true", "manifest=d:/_Code/Main/glTF-Asset-Generator/Output/Positive/Manifest.json", "outputDirectory=d:/_Code/Main/glTF-Asset-Generator/tempImages/Figures/SampleImages"],
-            "webRoot": "${workspaceFolder}/app",
-            "cwd": "${workspaceFolder}",
-        },
-        {
-            "name": "Debug Renderer V2",
-            "type": "node",
-            "request": "launch",
-            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
-            "windows": { "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd" },
-            "runtimeArgs" : ["--debug=5858"],
-            "program": "${workspaceFolder}/app/main.js",
-            "args": ["--", "headless=true", "manifest=d:/_Code/Main/glTF-Asset-Generator/Output/Positive/Manifest.json", "outputDirectory=d:/_Code/Main/glTF-Asset-Generator/tempImages/Figures/SampleImages"],
-            "cwd": "${workspaceFolder}",
-            "outputCapture": "std",
-        },
-        {
-            "name": "Attach",
-            "type": "node",
             "request": "attach",
             "port": 5858,
             "address": "localhost",
-            "restart": false,
-            "sourceMaps": false,
-            "localRoot": "${workspaceFolder}",
-            "remoteRoot": null
+            "webRoot": "${workspaceFolder}/app",
+            "timeout": 10000,
         },
+    ],
+    "compounds": [
         {
-            "name": "Debug Main Process",
-            "type": "node",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
-            "windows": {
-              "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
-            },
-            "args" : ["."],
-            "outputCapture": "std",
-          }
+            "name": "Run and Attach debugger",
+            "configurations": [
+                "Launch Main",
+                "Attach to Renderer"
+            ]
+        }
     ]
 }

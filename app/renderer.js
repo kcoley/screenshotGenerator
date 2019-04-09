@@ -11,18 +11,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const BABYLON = require("babylonjs");
 require("babylonjs-loaders");
 const babylonjs_1 = require("babylonjs");
+const child_process = require("child_process");
+const fs = require('fs');
+const ffmpegPath = require('ffmpeg-binaries');
+const { ipcRenderer } = require('electron');
 const { remote } = require('electron');
+const con = remote.getGlobal('console');
 const { dialog } = remote;
 const w = remote.getCurrentWindow();
-const fs = require('fs');
-const readline = require('readline');
-const stream = require('stream');
-const con = remote.getGlobal('console');
-const { app } = remote;
-const { ipcRenderer } = require('electron');
-const path = require('path');
-const child_process = require("child_process");
-const ffmpegPath = require('ffmpeg-binaries');
 ;
 class Renderer {
     createSceneAsync(canvas, engine, filepath, camPos) {
@@ -39,12 +35,10 @@ class Renderer {
             const arcRotateCamera = scene.activeCamera;
             arcRotateCamera.setPosition(camPos);
             self._camera = arcRotateCamera;
-            var hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("assets/environment.dds", scene);
+            const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("assets/environment.dds", scene);
             hdrTexture.gammaSpace = false;
             scene.createDefaultSkybox(hdrTexture, true, 100, 0.0);
             self._scene = scene;
-            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-            const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
             if (filepath) {
                 const fileURL = filepath.replace(/\\/g, '/');
                 const rootDirectory = BABYLON.Tools.GetFolderPath(fileURL);
@@ -52,7 +46,7 @@ class Renderer {
                 const self = this;
                 if (fs.existsSync(filepath)) {
                     BABYLON.SceneLoader.ImportMesh("", rootDirectory, sceneFileName, self._scene, function (meshes) {
-                        let root = new BABYLON.Mesh("root", self._scene);
+                        const root = new BABYLON.Mesh("root", self._scene);
                         for (const mesh of meshes) {
                             if (!mesh.parent) {
                                 mesh.parent = root;
@@ -74,7 +68,7 @@ class Renderer {
             }
         });
     }
-    createSnapshotAsync(canvas, engine, sampleImageName, outputFolder, ms = 30000) {
+    createSnapshotAsync(engine, sampleImageName, outputFolder) {
         const self = this;
         return new Promise((resolve, reject) => {
             const name = BABYLON.Tools.GetFilename(sampleImageName).replace('Figures/SampleImages/', '');
@@ -112,7 +106,7 @@ class Renderer {
                         const fileReader = new FileReader();
                         fileReader.onload = function () {
                             fs.writeFileSync(webmFilename, Buffer.from(new Uint8Array(this.result)));
-                            // Convert the webm to full-sized animated gif, then a thumbnail.
+                            // Convert the webm to animated gif.
                             runProgram(`${ffmpegPath} -i ${webmFilename} ${gifFullName} -hide_banner`, __dirname);
                             runProgram(`${ffmpegPath} -i ${webmFilename} -vf scale=72:72 ${gifFullName.replace('SampleImages', 'Thumbnails')} -hide_banner`, __dirname);
                             resolve("Animated gif generated");
@@ -121,21 +115,19 @@ class Renderer {
                     });
                 }
             });
-            //setTimeout(() => {
-            //    reject(`createSnapshotAsync: Promise timed out after ${ms} ms.`);
-            //}, ms);
         });
     }
     createSnapshotsAsync(glTFAssets, canvas, engine, outputDirectory) {
         return __awaiter(this, void 0, void 0, function* () {
-            let snapshotPromiseChain = null;
-            for (let i = 0; i < glTFAssets.length; ++i) {
-                try {
-                    const r = yield this.createSceneAsync(canvas, engine, glTFAssets[i].filepath, glTFAssets[i].camera.translation);
-                    const result = yield this.createSnapshotAsync(canvas, engine, glTFAssets[i].sampleImageName, outputDirectory);
-                }
-                catch (err) {
-                    con.log("Failed to create snapshot: " + err);
+            for (const glTFAsset of glTFAssets) {
+                if (glTFAsset.sampleImageName) {
+                    try {
+                        yield this.createSceneAsync(canvas, engine, glTFAsset.filepath, glTFAsset.camera.translation);
+                        yield this.createSnapshotAsync(engine, glTFAsset.sampleImageName, outputDirectory);
+                    }
+                    catch (err) {
+                        con.log("Failed to create snapshot: " + err);
+                    }
                 }
             }
             con.log("Complete!");
@@ -143,17 +135,11 @@ class Renderer {
         });
     }
     initialize(canvas) {
-        let runHeadless = false;
-        let gltf;
-        runHeadless = ipcRenderer.sendSync('synchronous-message', 'headless');
-        gltf = ipcRenderer.sendSync('synchronous-message', 'gltf');
-        let manifest = ipcRenderer.sendSync('synchronous-message', 'manifest');
-        let outputDirectory = ipcRenderer.sendSync('synchronous-message', 'outputDirectory');
+        const runHeadless = ipcRenderer.sendSync('synchronous-message', 'headless') || false;
+        const manifest = ipcRenderer.sendSync('synchronous-message', 'manifest');
+        const outputDirectory = ipcRenderer.sendSync('synchronous-message', 'outputDirectory');
         const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true });
-        let glTFAssets = null;
-        if (manifest) {
-            glTFAssets = this.loadManifestFile(manifest);
-        }
+        const glTFAssets = this.loadManifestFile(manifest);
         if (runHeadless) {
             if (!fs.existsSync(outputDirectory)) {
                 fs.mkdirSync(outputDirectory);
@@ -193,6 +179,8 @@ class Renderer {
      */
     loadManifestFile(manifestJSON) {
         const rootDirectory = BABYLON.Tools.GetFolderPath(this.convertToURL(manifestJSON));
+        con.log(manifestJSON);
+        con.log(rootDirectory);
         const result = [];
         const content = fs.readFileSync(manifestJSON);
         // open the manifest file
@@ -205,8 +193,7 @@ class Renderer {
             }
         }
         else {
-            for (let i = 0; i < jsonData.length; ++i) {
-                const jsonObj = jsonData[i];
+            for (const jsonObj of jsonData) {
                 const folder = jsonObj.folder;
                 for (const model of jsonObj.models) {
                     result.push(this.createGLTFAsset(model, rootDirectory + folder + "/"));
@@ -290,6 +277,6 @@ function runProgram(cmd, directory) {
     });
 }
 const renderer = new Renderer();
-let canvas = document.getElementById('render-canvas');
+const canvas = document.getElementById('render-canvas');
 renderer.initialize(canvas);
 //# sourceMappingURL=renderer.js.map
