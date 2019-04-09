@@ -38,7 +38,7 @@ export default class Renderer {
             self._canvas = canvas;
             self._engine = engine;
 
-            // This creates a basic Babylon Scene object (non-mesh)
+            // This creates a basic Babylon Scene object (non-mesh).
             const scene = new BABYLON.Scene(engine);
             scene.createDefaultCameraOrLight(true, true, true);
             const arcRotateCamera = scene.activeCamera as BABYLON.ArcRotateCamera;
@@ -207,12 +207,10 @@ export default class Renderer {
      */
     loadManifestFile(manifestJSON: string): IGLTFAsset[] {
         const rootDirectory = BABYLON.Tools.GetFolderPath(this.convertToURL(manifestJSON));
-        con.log(manifestJSON);
-        con.log(rootDirectory);
         const result: IGLTFAsset[] = [];
 
         const content = fs.readFileSync(manifestJSON);
-        // open the manifest file
+        // Open the manifest file.
         const jsonData = JSON.parse(content);
 
         if ('models' in jsonData) {

@@ -29,7 +29,7 @@ class Renderer {
             }
             self._canvas = canvas;
             self._engine = engine;
-            // This creates a basic Babylon Scene object (non-mesh)
+            // This creates a basic Babylon Scene object (non-mesh).
             const scene = new BABYLON.Scene(engine);
             scene.createDefaultCameraOrLight(true, true, true);
             const arcRotateCamera = scene.activeCamera;
@@ -179,11 +179,9 @@ class Renderer {
      */
     loadManifestFile(manifestJSON) {
         const rootDirectory = BABYLON.Tools.GetFolderPath(this.convertToURL(manifestJSON));
-        con.log(manifestJSON);
-        con.log(rootDirectory);
         const result = [];
         const content = fs.readFileSync(manifestJSON);
-        // open the manifest file
+        // Open the manifest file.
         const jsonData = JSON.parse(content);
         if ('models' in jsonData) {
             BABYLON.Tools.Log("Models present");
